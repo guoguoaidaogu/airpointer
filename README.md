@@ -29,13 +29,14 @@
 | Item | Status |
 |---|---|
 | AirPods Pro 3, macOS 26, Apple Silicon | Tested on one Mac with one pair |
+| AirPods 4 with ANC | Tested on one Mac with one pair |
 | AirPods Pro 2 | Recognized, not tested |
-| AirPods 4 and AirPods 4 with ANC | Recognized for real-device testing; not verified yet |
+| AirPods 4 | Recognized, not tested |
 | AirPods paired with your Mac | Required |
 | Xcode | Required to build |
 
-Normal connect and disconnect have run many times on that Mac and pair. These
-cases have not been tested on purpose:
+Normal connect and disconnect have run many times on that Mac with each tested
+pair. These cases have not been tested on purpose:
 
 - Force quit during a session
 - Sleep and wake during a session
@@ -108,10 +109,10 @@ flowchart TD
 
 ## Known limitations
 
-**Sessions end about 30 minutes after the lid closes.** The app does not set this
-limit. At that point motion stops, and the AirPods stay unreachable until you open
-the lid. To continue, open and close the lid. In one test, reconnecting with the lid
-closed did not reset the limit.
+**On the tested AirPods Pro 3, sessions end about 30 minutes after the lid
+closes.** The app does not set this limit. At that point motion stops, and the
+AirPods stay unreachable until you open the lid. To continue, open and close the
+lid. In one test, reconnecting with the lid closed did not reset the limit.
 
 The likely cause is timer `0x63` in the earbud firmware. We found it by reading
 `rkof.bin` (H2, version 9A348), the firmware image for the tested AirPods Pro 3:
@@ -126,7 +127,8 @@ The likely cause is timer `0x63` in the earbud firmware. We found it by reading
 Measured sessions ended at the same time, about 1,805 seconds after the lid closed.
 This comes from reading the firmware and from those timings. No live capture has
 confirmed it yet. The AirPods 4 image is the same 9A348 build and carries the same
-1,800,000 ms constant, but no AirPods 4 session has been measured yet.
+1,800,000 ms constant. An AirPods 4 ANC session with motion has been verified, but
+its full limit has not been measured separately.
 
 ## Troubleshooting
 
@@ -242,8 +244,9 @@ In a session's `native.log`:
 <details>
 <summary><strong>Tap Test</strong></summary>
 
-Taps are tuned on one person and AirPods Pro 3 so far, so your score may differ.
-AirPods 4 taps have not been tuned yet: run **Teach Tap** first, then this test.
+Taps are tuned on one person so far, so your score may differ. AirPods 4 ANC has
+passed a real-device session; its taps have not been separately tuned, so run
+**Teach Tap** if a tap is missed.
 
 Connect, then go to **File > Developer > Tap Test**. The test takes about 75
 seconds and tells you when to tap.
@@ -260,10 +263,12 @@ defaults write local.airpointer recordMotion -bool true
 <details>
 <summary><strong>Testing AirPods 4</strong></summary>
 
-This build recognizes AirPods 4 (`0x2019`) and AirPods 4 with ANC (`0x201B`),
-but no AirPods 4 session has been verified yet. The case is a different design
-from the Pro case, so the session log decides whether the diagnostic keep-alive
-works.
+AirPods 4 with ANC (`0x201B`) has passed a real-device session on one Mac with
+one pair. Its case reports `Case ModelName=Wireless Charging Case`, and the helper
+holds the case diagnostic asset. AirPods 4 without ANC (`0x2019`) is recognized
+but has not been tested.
+
+For a new or untested pair:
 
 1. Pair the AirPods 4 with the Mac and check the product ID:
 
@@ -284,8 +289,10 @@ works.
      the earbud stream open)
    - `HOLD phase=…` lines with fresh accelerometer and gyro counts
 
-   The AirPods 4 ANC case reports `Case ModelName=Wireless Charging Case`; that
-   name is accepted now.
+   The verified AirPods 4 ANC session logged `Earbud ModelName=AirPods`,
+   `Case ModelName=Wireless Charging Case`, and `CASE MTIC receipt ACK`. The
+   AirPods 4 case names `Charging Case`, `Wireless Charging Case`, and
+   `AirPods Pro Case` are all accepted.
 
 3. Run **File > Developer > Tap Test**. Note the score, and whether taps register
    before **Teach Tap** and after it.
