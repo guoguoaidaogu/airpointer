@@ -284,6 +284,9 @@ works.
      the earbud stream open)
    - `HOLD phase=…` lines with fresh accelerometer and gyro counts
 
+   The AirPods 4 ANC case reports `Case ModelName=Wireless Charging Case`; that
+   name is accepted now.
+
 3. Run **File > Developer > Tap Test**. Note the score, and whether taps register
    before **Teach Tap** and after it.
 
