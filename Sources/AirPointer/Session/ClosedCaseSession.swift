@@ -288,6 +288,8 @@ func runClosedCaseNativeChecks() throws {
     guard closedCaseLidOpen(frame(0x24,0x11),productID:0x2027)==true,closedCaseLidOpen(frame(0x62,0x32),productID:0x2027)==true,
           closedCaseLidOpen(frame(0x24,0x19),productID:0x2027)==false,closedCaseLidOpen(frame(0x02,0x11),productID:0x2027)==nil,
           closedCaseLidOpen(frame(0x24,0x11,model:[0x14,0x20]),productID:0x2027)==nil,closedCaseLidOpen(frame(0x24,0x11,model:[0x14,0x20]),productID:0x2014)==true,
+          closedCaseLidOpen(frame(0x24,0x11,model:[0x19,0x20]),productID:0x2019)==true,closedCaseLidOpen(frame(0x24,0x19,model:[0x19,0x20]),productID:0x2019)==false,
+          closedCaseLidOpen(frame(0x24,0x11,model:[0x1B,0x20]),productID:0x201B)==true,closedCaseLidOpen(frame(0x24,0x11,model:[0x1B,0x20]),productID:0x2019)==nil,
           closedCaseLidOpen(frame(0x24,0x11,length:27),productID:0x2027)==nil else{
         throw LessonError.message("The lid broadcast must be read only for this model with an earbud in the case.")
     }
@@ -313,6 +315,19 @@ func runClosedCaseNativeChecks() throws {
           survey.pairs.map(\.address)==["0A:1B:2C:3D:4E:5F","0A:1B:2C:3D:4E:62"],survey.pairs.map(\.connected)==[true,false],
           survey.pairs[1].title=="Spare AirPods Pro · AirPods Pro 2" else{
         throw LessonError.message("Paired AirPods must be found by vendor and product ID, not by name.")
+    }
+    // AirPods 4 and AirPods 4 ANC are the same H2 platform with different product IDs.
+    let airPods4Listing:[String:Any]=["SPBluetoothDataType":[[
+        "controller_properties":["controller_state":"attrib_on"],
+        "device_connected":[["Test AirPods 4":["device_vendorID":"0x004C","device_productID":"0x2019","device_address":"0A:1B:2C:3D:4E:70"]]],
+        "device_not_connected":[["Test AirPods 4 ANC":["device_vendorID":"0x004C","device_productID":"0x201B","device_address":"0A:1B:2C:3D:4E:71"]]]]]]
+    guard let airPods4=ClosedCaseAirPods.parse(try JSONSerialization.data(withJSONObject:airPods4Listing)),
+          airPods4.pairs.map(\.address)==["0A:1B:2C:3D:4E:70","0A:1B:2C:3D:4E:71"],
+          airPods4.pairs.map(\.model)==["AirPods 4","AirPods 4 ANC"],airPods4.pairs.map(\.connected)==[true,false],
+          airPods4.pairs.map(\.productID)==[0x2019,0x201B],
+          ClosedCaseAirPods.choose(airPods4,saved:nil) == .chosen(airPods4.pairs[0]),
+          ClosedCaseAirPods.choose(airPods4,saved:"0A:1B:2C:3D:4E:71") == .chosen(airPods4.pairs[1]) else{
+        throw LessonError.message("AirPods 4 and AirPods 4 ANC must be found by their product IDs.")
     }
     let bothConnected=ClosedCaseAirPods.Survey(poweredOn:true,pairs:survey.pairs.map{ClosedCaseAirPods(name:$0.name,model:$0.model,address:$0.address,connected:true,productID:$0.productID)})
     guard ClosedCaseAirPods.choose(survey,saved:"0a:1b:2c:3d:4e:62") == .chosen(survey.pairs[1]),
@@ -442,7 +457,7 @@ func runClosedCaseNativeChecks() throws {
           !closedCaseUpright([0,0,1],closed:[0,0,1],held:[1,0,0]) else{
         throw LessonError.message("Upright must follow a quarter turn from the closed pose or the pose of the saved edges.")
     }
-    print("PASS: AirPods found by product ID with a plain reason for each failure, motion code in JavaScriptCore, known angular motion, a saved offset in any pose, a hand-held first offset, gentle re-measuring, upright from a quarter turn, bridge types and raw array conversion; no device or cursor operations, bounded helper log and newest-session pruning, the lid from paired in-case reports and from the lid broadcast, short-drop hold, long-drop restart and saved grip edges")
+    print("PASS: AirPods found by product ID, including AirPods 4 and AirPods 4 ANC, with a plain reason for each failure, motion code in JavaScriptCore, known angular motion, a saved offset in any pose, a hand-held first offset, gentle re-measuring, upright from a quarter turn, bridge types and raw array conversion; no device or cursor operations, bounded helper log and newest-session pruning, the lid from paired in-case reports and from the lid broadcast for Pro 2, Pro 3 and AirPods 4, short-drop hold, long-drop restart and saved grip edges")
 }
 
 enum ClosedCaseStage:Equatable{case off,openLid,connecting,closeLid,settling,holding,calibrating,ready,pointing}

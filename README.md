@@ -30,6 +30,7 @@
 |---|---|
 | AirPods Pro 3, macOS 26, Apple Silicon | Tested on one Mac with one pair |
 | AirPods Pro 2 | Recognized, not tested |
+| AirPods 4 and AirPods 4 with ANC | Recognized for real-device testing; not verified yet |
 | AirPods paired with your Mac | Required |
 | Xcode | Required to build |
 
@@ -124,7 +125,8 @@ The likely cause is timer `0x63` in the earbud firmware. We found it by reading
 
 Measured sessions ended at the same time, about 1,805 seconds after the lid closed.
 This comes from reading the firmware and from those timings. No live capture has
-confirmed it yet.
+confirmed it yet. The AirPods 4 image is the same 9A348 build and carries the same
+1,800,000 ms constant, but no AirPods 4 session has been measured yet.
 
 ## Troubleshooting
 
@@ -141,7 +143,7 @@ confirmed it yet.
 
 ```mermaid
 flowchart LR
-    subgraph AirPods["AirPods Pro in the closed case"]
+    subgraph AirPods["AirPods in the closed case"]
         Sensors["Motion sensors"]
     end
 
@@ -240,7 +242,8 @@ In a session's `native.log`:
 <details>
 <summary><strong>Tap Test</strong></summary>
 
-Taps are tuned on one person so far, so your score may differ.
+Taps are tuned on one person and AirPods Pro 3 so far, so your score may differ.
+AirPods 4 taps have not been tuned yet: run **Teach Tap** first, then this test.
 
 Connect, then go to **File > Developer > Tap Test**. The test takes about 75
 seconds and tells you when to tap.
@@ -251,6 +254,46 @@ no size limit. Expect roughly 20 MB for a 30-minute session.
 ```sh
 defaults write local.airpointer recordMotion -bool true
 ```
+
+</details>
+
+<details>
+<summary><strong>Testing AirPods 4</strong></summary>
+
+This build recognizes AirPods 4 (`0x2019`) and AirPods 4 with ANC (`0x201B`),
+but no AirPods 4 session has been verified yet. The case is a different design
+from the Pro case, so the session log decides whether the diagnostic keep-alive
+works.
+
+1. Pair the AirPods 4 with the Mac and check the product ID:
+
+   ```sh
+   system_profiler SPBluetoothDataType -json | grep device_productID
+   ```
+
+   AirPods 4 should show `0x2019` or `0x201B`. If it shows another value, the app
+   won't list the pair in Settings.
+
+2. Connect and open the lid when asked. In the newest
+   `~/Library/Application Support/AirPointer/PointerSessions/` folder, `native.log`
+   should contain:
+
+   - `Earbud ModelName=…` and `Case ModelName=…` (the exact strings tell us which
+     firmware identity this pair reports)
+   - `CASE MTIC receipt ACK` (the case is holding the diagnostic asset that keeps
+     the earbud stream open)
+   - `HOLD phase=…` lines with fresh accelerometer and gyro counts
+
+3. Run **File > Developer > Tap Test**. Note the score, and whether taps register
+   before **Teach Tap** and after it.
+
+4. Note how long motion lasts after the lid closes, and whether the lid is
+   confirmed by itself or only by pressing **Lid Closed**.
+
+If the session ends with `WRONG_EARBUD_MODEL` or `WRONG_CASE_MODEL`, report the
+`Earbud ModelName` / `Case ModelName` line from `native.log`; the checks are
+intentionally broad enough to accept the names seen in the AirPods 4 firmware,
+but a new string needs to be added.
 
 </details>
 
